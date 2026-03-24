@@ -1,80 +1,621 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KS Clean 119 - 화재 비례보상 계산기</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; line-height: 1.6; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        h2 { color: #d32f2f; text-align: center; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #1a237e; color: white; border: none; border-radius: 5px; margin-top: 20px; font-size: 16px; cursor: pointer; }
-        #result { margin-top: 20px; padding: 15px; border-radius: 5px; display: none; }
-        .warning { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-        .safe { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화재 비례보상 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --c-bg:       #F2F4F8;
+  --c-surface:  #FFFFFF;
+  --c-border:   #E2E6EE;
+  --c-border2:  #CDD3DF;
+  --c-text:     #111827;
+  --c-sub:      #6B7280;
+  --c-muted:    #9CA3AF;
+  --c-red:      #C0392B;
+  --c-red-d:    #96241A;
+  --c-red-bg:   #FEF2F2;
+  --c-red-bd:   #FECACA;
+  --c-amber:    #D97706;
+  --c-amber-bg: #FFFBEB;
+  --c-amber-bd: #FDE68A;
+  --c-green:    #15803D;
+  --c-green-bg: #F0FDF4;
+  --c-green-bd: #BBF7D0;
+  --c-navy:     #1E3A5F;
+  --c-navy-m:   #2B5187;
+  --c-navy-bg:  #EFF4FB;
+  --r-sm: 8px; --r-lg: 16px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.07);
+  --font: 'Pretendard','Noto Sans KR',sans-serif;
+  --mono: 'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--c-bg);color:var(--c-text);min-height:100vh;padding:32px 16px 80px;-webkit-font-smoothing:antialiased;}
+
+/* HEADER */
+.page-header{max-width:580px;margin:0 auto 28px;text-align:center;}
+.page-title{font-size:22px;font-weight:900;color:var(--c-navy);letter-spacing:-0.02em;margin-bottom:4px;}
+.page-sub{font-size:12.5px;color:var(--c-muted);font-weight:400;}
+
+/* CARD */
+.card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);box-shadow:var(--shadow);max-width:580px;margin:0 auto 14px;overflow:hidden;}
+.card-head{padding:14px 22px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:9px;}
+.ch-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ch-icon.navy{background:var(--c-navy-bg);}
+.ch-icon.red{background:var(--c-red-bg);}
+.ch-title{font-size:13px;font-weight:700;color:var(--c-navy);}
+.ch-desc{font-size:11px;color:var(--c-muted);margin-left:auto;}
+.card-body{padding:22px;}
+
+/* FIELDS */
+.field{margin-bottom:18px;}
+.field:last-child{margin-bottom:0;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.flabel{font-size:11px;font-weight:700;color:var(--c-sub);letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:4px;}
+.flabel .req{color:var(--c-red);font-size:13px;}
+
+.iwrap{position:relative;}
+.iwrap input{width:100%;height:42px;padding:0 40px 0 13px;border:1.5px solid var(--c-border2);border-radius:var(--r-sm);font-family:var(--font);font-size:14px;font-weight:500;color:var(--c-text);background:#FAFBFC;transition:border-color .15s,box-shadow .15s,background .15s;-webkit-appearance:none;}
+.iwrap input:focus{outline:none;border-color:var(--c-navy-m);background:#fff;box-shadow:0 0 0 3px rgba(43,81,135,.10);}
+.iunit{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--c-muted);font-weight:500;pointer-events:none;}
+
+/* SELECT */
+.sel{width:100%;height:42px;padding:0 36px 0 12px;border:1.5px solid var(--c-border2);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;font-weight:500;color:var(--c-text);background:#FAFBFC url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;-webkit-appearance:none;appearance:none;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+.sel:focus{outline:none;border-color:var(--c-navy-m);background-color:#fff;box-shadow:0 0 0 3px rgba(43,81,135,.10);}
+
+/* CHIP */
+.chip-group{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{display:flex;align-items:center;gap:5px;padding:7px 12px;border:1.5px solid var(--c-border2);border-radius:20px;font-family:var(--font);font-size:12px;font-weight:600;color:var(--c-sub);background:#FAFBFC;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;}
+.chip:hover{border-color:var(--c-navy-m);color:var(--c-navy);background:var(--c-navy-bg);}
+.chip.active{border-color:var(--c-navy);background:var(--c-navy);color:#fff;box-shadow:0 2px 8px rgba(30,58,95,.25);}
+.chip .cr{font-size:10px;opacity:.75;font-family:var(--mono);font-weight:400;}
+.chip.active .cr{opacity:.8;}
+
+/* INFO STRIP */
+.istrip{display:flex;align-items:center;gap:8px;background:var(--c-navy-bg);border:1px solid #C3D5EE;border-radius:var(--r-sm);padding:9px 13px;font-size:12px;color:var(--c-navy-m);font-weight:500;margin-top:8px;}
+.istrip .mn{font-family:var(--mono);}
+
+/* 감가표 안내 */
+.depr-note{background:#F8F9FB;border:1px solid var(--c-border);border-radius:var(--r-sm);padding:10px 13px;font-size:11.5px;color:var(--c-sub);line-height:1.7;margin-top:8px;}
+.depr-note strong{color:var(--c-navy-m);font-weight:700;}
+
+/* DIVIDER */
+.divline{border:none;border-top:1px solid var(--c-border);margin:20px 0;}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.tinfo .tl{font-size:13.5px;font-weight:600;color:var(--c-text);margin-bottom:2px;}
+.tinfo .ts{font-size:11.5px;color:var(--c-muted);}
+.sw{width:44px;height:25px;flex-shrink:0;background:var(--c-border2);border-radius:13px;position:relative;cursor:pointer;transition:background .2s;margin-top:2px;}
+.sw.on{background:var(--c-navy);}
+.sw::after{content:'';position:absolute;width:19px;height:19px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 4px rgba(0,0,0,.18);}
+.sw.on::after{transform:translateX(19px);}
+.collapsible{display:none;margin-top:14px;}
+.collapsible.open{display:block;animation:fadeSlide .2s ease;}
+
+/* SUBMIT */
+.btn-submit{width:100%;height:50px;background:linear-gradient(135deg,var(--c-red) 0%,var(--c-red-d) 100%);color:#fff;border:none;border-radius:var(--r-sm);font-family:var(--font);font-size:15px;font-weight:800;letter-spacing:-.01em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s,transform .1s,box-shadow .15s;box-shadow:0 4px 14px rgba(192,57,43,.35);}
+.btn-submit:hover{opacity:.92;}
+.btn-submit:active{transform:scale(.99);}
+
+/* RESULT */
+#resultWrap{display:none;}
+.result-hero{padding:22px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;gap:14px;}
+.result-hero.st-danger {background:linear-gradient(135deg,#7F1D1D 0%,var(--c-red-d) 100%);}
+.result-hero.st-warning{background:linear-gradient(135deg,#78350F 0%,#B45309 100%);}
+.result-hero.st-safe   {background:linear-gradient(135deg,#14532D 0%,#15803D 100%);}
+.hero-emoji{font-size:34px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
+.hero-text{color:#fff;flex:1;}
+.hero-title{font-size:16px;font-weight:900;margin-bottom:3px;letter-spacing:-.02em;}
+.hero-sub{font-size:12px;opacity:.82;line-height:1.5;}
+.hero-ratio{margin-left:auto;flex-shrink:0;text-align:center;color:#fff;}
+.ratio-num{font-family:var(--mono);font-size:32px;font-weight:500;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.2);}
+.ratio-lbl{font-size:10px;opacity:.7;margin-top:2px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--c-border);}
+.kpi-cell{padding:14px 10px;border-right:1px solid var(--c-border);text-align:center;}
+.kpi-cell:last-child{border-right:none;}
+.kpi-lbl{font-size:9.5px;font-weight:700;color:var(--c-muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px;}
+.kpi-val{font-family:var(--mono);font-size:12px;font-weight:500;}
+.kpi-val.red  {color:var(--c-red);}
+.kpi-val.green{color:var(--c-green);}
+.kpi-val.amber{color:var(--c-amber);}
+.kpi-val.navy {color:var(--c-navy-m);}
+
+/* GAUGE */
+.gauge-wrap{padding:18px 22px 14px;border-bottom:1px solid var(--c-border);}
+.gauge-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.gauge-title{font-size:11px;font-weight:700;color:var(--c-sub);text-transform:uppercase;letter-spacing:.05em;}
+.gauge-pct{font-family:var(--mono);font-size:12px;font-weight:500;}
+.gauge-track{height:12px;background:var(--c-bg);border-radius:6px;overflow:visible;position:relative;}
+.gauge-fill{height:100%;border-radius:6px;position:relative;transition:width 1s cubic-bezier(.4,0,.2,1);}
+.gauge-fill::after{content:'';position:absolute;right:-1px;top:-2px;width:16px;height:16px;border-radius:50%;background:inherit;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.18);}
+.gauge-mark{position:absolute;top:-3px;height:18px;width:2px;background:var(--c-amber);border-radius:1px;}
+.gauge-mark-lbl{position:absolute;top:20px;left:-18px;font-size:9.5px;font-weight:700;color:var(--c-amber);white-space:nowrap;}
+.gauge-labels{display:flex;justify-content:space-between;margin-top:18px;font-size:10px;color:var(--c-muted);}
+
+/* TABLE */
+.detail-wrap{padding:18px 22px 6px;border-bottom:1px solid var(--c-border);}
+.sec-title{font-size:11px;font-weight:700;color:var(--c-sub);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+.dtable{width:100%;border-collapse:collapse;font-size:13px;}
+.dtable td{padding:9px 6px;border-bottom:1px solid var(--c-border);vertical-align:middle;}
+.dtable tr:last-child td{border-bottom:none;}
+.dtable .dk{color:var(--c-sub);font-weight:500;}
+.dtable .dv{text-align:right;font-family:var(--mono);font-weight:500;}
+.dtable .dv.red  {color:var(--c-red);}
+.dtable .dv.green{color:var(--c-green);}
+.dtable .dv.amber{color:var(--c-amber);}
+.dtable .dv.navy {color:var(--c-navy-m);}
+.dtable .row-sep td{background:var(--c-bg);font-size:10px;font-weight:700;color:var(--c-muted);letter-spacing:.05em;text-transform:uppercase;padding:6px 6px;}
+.dtable .row-tot td{font-weight:700;background:#F8F9FB;}
+
+/* ADVICE */
+.advice-wrap{padding:18px 22px;}
+.advice-box{border-radius:var(--r-sm);padding:14px 16px;font-size:13px;line-height:1.75;}
+.advice-box.red  {background:var(--c-red-bg);  border:1px solid var(--c-red-bd);  color:#7F1D1D;}
+.advice-box.amber{background:var(--c-amber-bg);border:1px solid var(--c-amber-bd);color:#78350F;}
+.advice-box.green{background:var(--c-green-bg);border:1px solid var(--c-green-bd);color:#14532D;}
+.advice-box strong{font-weight:700;}
+.advice-box ul{margin:6px 0 0 16px;}
+.advice-box ul li{margin-bottom:3px;}
+
+/* SOURCE BADGE */
+.source-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--c-muted);background:#F8F9FB;border:1px solid var(--c-border);border-radius:4px;padding:3px 8px;margin-bottom:4px;}
+
+.footnote{max-width:580px;margin:16px auto 0;font-size:11px;color:var(--c-muted);text-align:center;line-height:1.8;padding:0 4px;}
+
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp  {from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:480px){
+  .grid2{grid-template-columns:1fr;}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .kpi-cell:nth-child(2){border-right:none;}
+  .kpi-cell:nth-child(3){border-right:1px solid var(--c-border);}
+  .kpi-cell:nth-child(1),.kpi-cell:nth-child(2){border-bottom:1px solid var(--c-border);}
+}
+</style>
 </head>
 <body>
 
-<div class="card">
-    <h2>KS Clean 119<br>손해액 진단기</h2>
-    <p style="font-size: 0.9em; color: #666; text-align: center;">화재 복구 및 보험 보상 범위 확인</p>
-    
-    <label>건물 준공연도 (예: 2002)</label>
-    <input type="number" id="year" placeholder="예: 2002" value="2002">
-
-    <label>건물 면적 (평)</label>
-    <input type="number" id="area" placeholder="예: 20" value="20">
-
-    <label>현재 화재보험 가입금액 (만원)</label>
-    <input type="number" id="insurance" placeholder="예: 30000" value="30000">
-
-    <button onclick="checkInsurance()">보상 범위 진단하기</button>
-
-    <div id="result"></div>
+<div class="page-header">
+  <div class="page-title">🔥 화재 비례보상 계산기</div>
+  <div class="page-sub">화재보험 가입금액 적정성 진단 및 실수령액 추정</div>
 </div>
 
-<script>
-    function checkInsurance() {
-        const buildYear = document.getElementById('year').value;
-        const area = document.getElementById('area').value;
-        const myInsurance = document.getElementById('insurance').value;
-        
-        const currentYear = new Date().getFullYear();
-        const elapsed = currentYear - buildYear; // 경과연수
-        
-        // 1. 신축단가 (평당 600만원 가정)
-        // 2. 감가율 (철근콘크리트 1년 2% 감가 가정)
-        const newPrice = area * 600; 
-        const depreciation = elapsed * 2; 
-        const currentValue = Math.round(newPrice * (1 - (depreciation / 100)));
-        
-        // 80% 미만 가입 시 비례보상 발생
-        const limit = currentValue * 0.8;
-        const ratio = myInsurance < limit ? (myInsurance / limit) : 1;
-        
-        const resultDiv = document.getElementById('result');
-        resultDiv.style.display = 'block';
-        
-        if (ratio < 1) {
-            resultDiv.className = 'warning';
-            resultDiv.innerHTML = `
-                <strong>⚠️ 주의: 비례보상 대상입니다!</strong><br>
-                현재 건물의 평가 가치는 약 <b>${currentValue}만원</b>입니다.<br>
-                사고 발생 시 실제 손해액의 약 <b>${Math.round(ratio * 100)}%</b>만 보상받으실 수 있습니다.
-            `;
-        } else {
-            resultDiv.className = 'safe';
-            resultDiv.innerHTML = `
-                <strong>✅ 안전: 적정 가입 상태입니다.</strong><br>
-                현재 건물의 가치 대비 보험금이 충분합니다.<br>
-                실제 손해액을 한도 내에서 전액 보상받으실 수 있습니다.
-            `;
-        }
-    }
-</script>
+<!-- 건물 정보 -->
+<div class="card">
+  <div class="card-head">
+    <div class="ch-icon navy">🏢</div>
+    <span class="ch-title">건물 정보</span>
+    <span class="ch-desc">구조·용도별 공식 감가율 적용</span>
+  </div>
+  <div class="card-body">
 
+    <div class="field">
+      <div class="grid2">
+        <div>
+          <div class="flabel">준공연도 <span class="req">*</span></div>
+          <div class="iwrap">
+            <input type="number" id="year" value="2002" min="1900" max="2025">
+            <span class="iunit">년</span>
+          </div>
+        </div>
+        <div>
+          <div class="flabel">건물 면적 <span class="req">*</span></div>
+          <div class="iwrap">
+            <input type="number" id="area" value="20" min="1">
+            <span class="iunit">㎡</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--c-muted);margin-top:6px;">
+        💡 평 단위 입력 시 × 3.305 = ㎡  (예: 20평 → 66.1㎡)
+      </div>
+    </div>
+
+    <!-- 구조 선택 -->
+    <div class="field">
+      <div class="flabel">건물 구조 <span class="req">*</span></div>
+      <div class="chip-group" id="structGroup">
+        <!-- 주요 구조 칩 — data-cat: 용도범주에 따른 감가율 객체 key -->
+        <div class="chip active" data-key="RC"     onclick="pickStruct(this)">철근·철골콘크리트 <span class="cr">[A]</span></div>
+        <div class="chip"        data-key="STEEL"  onclick="pickStruct(this)">철골조·석조·연와석조 <span class="cr">[B]</span></div>
+        <div class="chip"        data-key="CONC"   onclick="pickStruct(this)">콘크리트·목조(한식) <span class="cr">[C]</span></div>
+        <div class="chip"        data-key="BLOCK"  onclick="pickStruct(this)">블록조·경량철골·판넬 <span class="cr">[D]</span></div>
+        <div class="chip"        data-key="EARTH"  onclick="pickStruct(this)">토조·토벽조·목골탈락 <span class="cr">[E]</span></div>
+        <div class="chip"        data-key="SIMPLE" onclick="pickStruct(this)">간이·컨테이너 <span class="cr">[F]</span></div>
+      </div>
+      <div class="istrip" id="structStrip">
+        <span>📐</span><span id="structStripText"></span>
+      </div>
+    </div>
+
+    <!-- 용도 선택 -->
+    <div class="field">
+      <div class="flabel">건물 용도 <span class="req">*</span></div>
+      <!-- 1단: 대분류 -->
+      <select class="sel" id="usageCat" onchange="onCatChange()" style="margin-bottom:8px;">
+        <option value="일반">🏠 일반건물 (주거·근생·업무 등)</option>
+        <option value="창고공장">🏭 창고·공장</option>
+        <option value="특수">⚡ 특수건물 (변전소·냉장창고·화학공장 등)</option>
+      </select>
+      <!-- 2단: 세부 -->
+      <select class="sel" id="usageSub" onchange="onSubChange()"></select>
+
+      <div class="istrip" style="margin-top:8px;">
+        <span>💰</span><span id="priceStripText"></span>
+      </div>
+      <div class="depr-note" id="deprNote"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 보험 정보 -->
+<div class="card">
+  <div class="card-head">
+    <div class="ch-icon red">🛡</div>
+    <span class="ch-title">보험 가입 현황</span>
+  </div>
+  <div class="card-body">
+
+    <div class="field">
+      <div class="flabel">현재 화재보험 가입금액 <span class="req">*</span></div>
+      <div class="iwrap">
+        <input type="number" id="insurance" value="30000" min="0">
+        <span class="iunit">만원</span>
+      </div>
+    </div>
+
+    <hr class="divline">
+
+    <div class="toggle-row">
+      <div class="tinfo">
+        <div class="tl">실제 손해액 직접 입력</div>
+        <div class="ts">입력 시 예상 보험금·본인부담액 계산</div>
+      </div>
+      <div class="sw" id="lossToggle" onclick="toggleLoss(this)"></div>
+    </div>
+    <div class="collapsible" id="lossCollapse">
+      <div class="flabel" style="margin-top:0;">실제 발생 손해액</div>
+      <div class="iwrap">
+        <input type="number" id="lossAmt" min="0" placeholder="예: 5000">
+        <span class="iunit">만원</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--c-muted);margin-top:5px;">복구·철거·청소 비용 등 실제 피해액을 입력하세요.</div>
+    </div>
+
+    <hr class="divline">
+    <button class="btn-submit" onclick="calculate()">🔍 비례보상 진단 실행</button>
+
+  </div>
+</div>
+
+<!-- 결과 -->
+<div id="resultWrap">
+  <div class="card" style="animation:slideUp .35s ease;">
+    <div class="result-hero" id="resultHero">
+      <div class="hero-emoji" id="heroEmoji"></div>
+      <div class="hero-text">
+        <div class="hero-title" id="heroTitle"></div>
+        <div class="hero-sub"   id="heroSub"></div>
+      </div>
+      <div class="hero-ratio">
+        <div class="ratio-num" id="heroRatioNum"></div>
+        <div class="ratio-lbl">보상 비율</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="gauge-wrap">
+      <div class="gauge-header">
+        <span class="gauge-title">가입금액 / 적정금액 비율</span>
+        <span class="gauge-pct" id="gaugePct"></span>
+      </div>
+      <div class="gauge-track">
+        <div class="gauge-fill" id="gaugeFill" style="width:0%"></div>
+        <div class="gauge-mark" style="left:80%"><div class="gauge-mark-lbl">기준 80%</div></div>
+      </div>
+      <div class="gauge-labels"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span><span>100%</span></div>
+    </div>
+
+    <div class="detail-wrap">
+      <div class="sec-title">📋 산출 내역</div>
+      <div class="source-badge">📌 한국부동산원 2025 건물신축단가표 · 별표1 경년감가율표 적용</div>
+      <table class="dtable" id="detailTable"></table>
+    </div>
+
+    <div class="advice-wrap">
+      <div class="advice-box" id="adviceBox"></div>
+    </div>
+  </div>
+</div>
+
+<p class="footnote">
+  ※ 신축단가: 한국부동산원 2025년도 건물신축단가표 용도별 평균값 기준 (원/㎡)<br>
+  ※ 경년감가율: 화재보험 별표1 건물의 추정내용연수 및 경년감가율표 기준<br>
+  ※ 본 계산기는 참고용이며, 실제 보험금은 손해사정 및 보험사 심사에 따라 달라질 수 있습니다.
+</p>
+
+<script>
+/* ======================================================
+   별표1 경년감가율표 (보험개발원/화재보험 공식 기준)
+   구조 key × 용도범주(일반/창고공장/특수) → {life, rate}
+   최소잔존가치: 감가율 적용 후 잔존가치 min 20%
+====================================================== */
+const DEPR = {
+  //              일반건물         창고·공장        특수건물
+  RC:    { 일반:{life:75,rate:1.07}, 창고공장:{life:57,rate:1.40}, 특수:{life:38,rate:2.11} },
+  STEEL: { 일반:{life:60,rate:1.33}, 창고공장:{life:45,rate:1.78}, 특수:{life:30,rate:2.67} },
+  CONC:  { 일반:{life:50,rate:1.60}, 창고공장:{life:38,rate:2.11}, 특수:{life:25,rate:3.20} },
+  BLOCK: { 일반:{life:40,rate:2.00}, 창고공장:{life:30,rate:2.67}, 특수:{life:20,rate:4.00} },
+  EARTH: { 일반:{life:30,rate:2.67}, 창고공장:{life:23,rate:3.48}, 특수:{life:15,rate:5.33} },
+  SIMPLE:{ 일반:{life:10,rate:8.00}, 창고공장:{life:7, rate:11.43},특수:{life:7, rate:11.43}},
+};
+
+const STRUCT_LABELS = {
+  RC:    '철근·철골콘크리트/철골콘크리트조',
+  STEEL: '철골조/석조/연와석조',
+  CONC:  '콘크리트조/연와조/목조(한식·통나무)',
+  BLOCK: '블록조/경량철골조/판넬(절충식)',
+  EARTH: '토조/토벽조/목골탈락',
+  SIMPLE:'간이·컨테이너 구조',
+};
+
+/* ======================================================
+   한국부동산원 2025년도 건물신축단가표 (원/㎡)
+   → 계산 시 만원/㎡ 으로 변환 (÷10000)
+====================================================== */
+const USAGE_MAP = {
+  일반: [
+    { label:'다가구 주택',    price:207.99 },  // 2,079,879 / 10000
+    { label:'아파트',         price:192.74 },
+    { label:'연립 주택',      price:232.95 },
+    { label:'다세대 주택',    price:205.54 },
+    { label:'다중주택',       price:212.79 },
+    { label:'오피스텔',       price:194.57 },
+    { label:'근린생활시설',   price:192.10 },
+  ],
+  창고공장: [
+    { label:'창고',  price:86.09  },  // 860,857 / 10000
+    { label:'공장',  price:105.34 },  // 1,053,375 / 10000
+  ],
+  특수: [
+    // 특수건물은 별도 감정 필요 — 참고용으로 공장단가 준용
+    { label:'변전소·발전소·정저장·정류장 등 (참고용)', price:105.34 },
+    { label:'냉장창고 (참고용)',                        price:105.34 },
+    { label:'화학공장 및 기타 유사 (참고용)',           price:105.34 },
+  ],
+};
+
+/* ======================================================
+   STATE
+====================================================== */
+let curStructKey = 'RC';
+
+/* ======================================================
+   INIT
+====================================================== */
+window.onload = () => {
+  updateStructStrip();
+  onCatChange();
+};
+
+/* ======================================================
+   구조 칩 선택
+====================================================== */
+function pickStruct(el) {
+  document.querySelectorAll('#structGroup .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  curStructKey = el.dataset.key;
+  updateStructStrip();
+  updateDeprNote();
+}
+
+function updateStructStrip() {
+  const cat = deprCategory();
+  const d   = DEPR[curStructKey][cat];
+  document.getElementById('structStripText').innerHTML =
+    `${STRUCT_LABELS[curStructKey]} · 내용연수 <span class="mn">${d.life}년</span> · 연 감가율 <span class="mn">${d.rate}%</span>`;
+}
+
+/* ======================================================
+   용도 선택
+====================================================== */
+function deprCategory() {
+  // usageCat value → DEPR key
+  const v = document.getElementById('usageCat') ? document.getElementById('usageCat').value : '일반';
+  return v; // '일반' | '창고공장' | '특수'
+}
+
+function onCatChange() {
+  const cat   = document.getElementById('usageCat').value;
+  const items = USAGE_MAP[cat];
+  document.getElementById('usageSub').innerHTML =
+    items.map(it =>
+      `<option value="${it.price}">${it.label}  —  ${(it.price * 10000).toLocaleString()}원/㎡</option>`
+    ).join('');
+  onSubChange();
+  updateStructStrip();
+  updateDeprNote();
+}
+
+function onSubChange() {
+  const sub   = document.getElementById('usageSub');
+  const label = sub.options[sub.selectedIndex].text.split('—')[0].trim();
+  const price = parseFloat(sub.value);
+  document.getElementById('priceStripText').textContent =
+    `${label} · 평당 ${(price * 3.305).toFixed(1)}만원 / ㎡당 ${(price * 10000).toLocaleString()}원`;
+  updateDeprNote();
+}
+
+function updateDeprNote() {
+  const cat = deprCategory();
+  const d   = DEPR[curStructKey][cat];
+  const catLabel = { 일반:'일반건물', 창고공장:'창고·공장', 특수:'특수건물' }[cat];
+  document.getElementById('deprNote').innerHTML =
+    `<strong>별표1 적용 기준</strong> · ${catLabel} · ${STRUCT_LABELS[curStructKey]}<br>
+     추정 내용연수 <strong>${d.life}년</strong> · 연 경년감가율 <strong>${d.rate}%</strong>
+     (최대 감가 80%, 잔존가치 최소 20%)`;
+}
+
+/* ======================================================
+   토글
+====================================================== */
+function toggleLoss(el) {
+  el.classList.toggle('on');
+  document.getElementById('lossCollapse').classList.toggle('open', el.classList.contains('on'));
+}
+
+/* ======================================================
+   FORMAT
+====================================================== */
+const comma = n  => Number(n).toLocaleString('ko-KR');
+const wonM  = n  => comma(Math.round(n)) + ' 만원';     // 만원 단위
+const pctStr= n  => n.toFixed(2) + '%';
+
+/* ======================================================
+   CALCULATE
+====================================================== */
+function calculate() {
+  const year    = parseInt(document.getElementById('year').value)       || 0;
+  const areaSqm = parseFloat(document.getElementById('area').value)     || 0; // ㎡
+  const insAmt  = parseFloat(document.getElementById('insurance').value) || 0; // 만원
+  const unitPricePerSqm = parseFloat(document.getElementById('usageSub').value) || 0; // 만원/㎡
+  const lossOn  = document.getElementById('lossToggle').classList.contains('on');
+  const lossIn  = lossOn ? (parseFloat(document.getElementById('lossAmt').value) || 0) : null;
+
+  if (!year || !areaSqm || !insAmt) {
+    alert('준공연도, 건물 면적, 가입금액을 모두 입력해주세요.');
+    return;
+  }
+
+  const cat      = deprCategory();
+  const d        = DEPR[curStructKey][cat];
+  const elapsed  = Math.max(0, new Date().getFullYear() - year);
+
+  // 감가율 적용 (최대 80% 감가 → 잔존가치 최소 20%)
+  const deprPct  = Math.min(elapsed * d.rate, 80);
+  const remainPct = 100 - deprPct;
+
+  // 신축 재조달가 (만원)
+  const newPrice  = areaSqm * unitPricePerSqm;
+  // 현재 건물 평가가치 (만원)
+  const currVal   = Math.round(newPrice * remainPct / 100);
+  // 적정 최소 가입금액 (80%)
+  const minIns    = Math.round(currVal * 0.8);
+  // 부족액
+  const shortfall = Math.max(0, minIns - insAmt);
+  // 비례보상 비율 (max 1)
+  const ratio     = Math.min(insAmt / minIns, 1);
+  const pct       = Math.round(ratio * 100);
+
+  /* 상태 */
+  let st, emoji, title, sub;
+  if      (ratio < 0.6) { st='st-danger';  emoji='🚨'; title='위험 — 심각한 비례보상 대상';  sub=`실손해액의 ${pct}%만 수령 · 즉각 재검토 필요`; }
+  else if (ratio < 1.0) { st='st-warning'; emoji='⚠️'; title='주의 — 비례보상 발생 구간';    sub=`실손해액의 ${pct}%만 수령 · 증액 권고`; }
+  else                  { st='st-safe';    emoji='✅'; title='안전 — 적정 가입 상태';         sub='실손해액 전액 보상 가능 (한도 내)'; }
+
+  document.getElementById('resultHero').className   = 'result-hero ' + st;
+  document.getElementById('heroEmoji').textContent  = emoji;
+  document.getElementById('heroTitle').textContent  = title;
+  document.getElementById('heroSub').textContent    = sub;
+  document.getElementById('heroRatioNum').textContent = pct + '%';
+
+  /* KPI */
+  const kpis = [
+    { l:'건물 평가가치', v:wonM(currVal),                     c:'navy' },
+    { l:'적정 가입금액', v:wonM(minIns),                      c:'navy' },
+    { l:'부족액',        v:shortfall>0?wonM(shortfall):'없음',c:shortfall>0?'red':'green' },
+    { l:'보상 비율',     v:pct+'%',                           c:pct>=100?'green':pct>=70?'amber':'red' },
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k=>
+    `<div class="kpi-cell"><div class="kpi-lbl">${k.l}</div><div class="kpi-val ${k.c}">${k.v}</div></div>`
+  ).join('');
+
+  /* 게이지 */
+  const gW = Math.min((insAmt / minIns) * 80, 100);
+  const gC = pct>=100 ? '#15803D' : pct>=70 ? '#D97706' : '#C0392B';
+  const gf = document.getElementById('gaugeFill');
+  gf.style.background = gC;
+  setTimeout(() => { gf.style.width = gW + '%'; }, 80);
+  document.getElementById('gaugePct').textContent = Math.round((insAmt/minIns)*100) + '%';
+
+  /* 상세 테이블 */
+  const areaPy = (areaSqm / 3.305).toFixed(1); // 평 환산 표시용
+  const rows = [
+    ['sep','건물 가치 산출'],
+    ['','용도별 신축단가',          `${comma(Math.round(unitPricePerSqm*10000))} 원/㎡`, 'navy'],
+    ['','건물 면적',                `${areaSqm} ㎡ (약 ${areaPy} 평)`, 'navy'],
+    ['','신축 재조달가',            wonM(newPrice), 'navy'],
+    ['','경과연수',                 `${elapsed} 년`, 'navy'],
+    ['','연 경년감가율 (별표1)',    `${d.rate}%/년`, 'navy'],
+    ['','적용 감가율',              `${deprPct.toFixed(2)}% (잔존 ${remainPct.toFixed(2)}%)`, 'navy'],
+    ['','현재 건물 평가가치',       wonM(currVal), 'navy'],
+    ['sep','비례보상 계산'],
+    ['','적정 가입금액 기준 (80%)', wonM(minIns), 'navy'],
+    ['','현재 가입금액',            wonM(insAmt), insAmt>=minIns?'green':'red'],
+    ['','부족액',                   shortfall>0?wonM(shortfall):'없음', shortfall>0?'red':'green'],
+    ['tot','비례보상 비율',          pct+'%', pct>=100?'green':pct>=70?'amber':'red'],
+  ];
+
+  if (lossOn && lossIn > 0) {
+    const pay  = Math.min(Math.round(lossIn * ratio), insAmt);
+    const self = Math.max(0, lossIn - pay);
+    rows.push(['sep','실손해액 기준 보험금']);
+    rows.push(['','입력 손해액',        wonM(lossIn),  'navy']);
+    rows.push(['','예상 보험금 수령액', wonM(pay),     pct>=100?'green':'amber']);
+    rows.push(['tot','본인 부담 예상액', self>0?wonM(self):'없음', self>0?'red':'green']);
+  }
+
+  document.getElementById('detailTable').innerHTML = rows.map(r => {
+    if (r[0]==='sep') return `<tr class="row-sep"><td colspan="2">${r[1]}</td></tr>`;
+    const cls = r[0]==='tot' ? 'row-tot' : '';
+    return `<tr class="${cls}"><td class="dk">${r[1]}</td><td class="dv ${r[3]}">${r[2]}</td></tr>`;
+  }).join('');
+
+  /* 조언 */
+  let advHtml, advCls;
+  if (ratio < 0.6) {
+    advCls='red';
+    advHtml=`<strong>🚨 즉각적인 조치가 필요합니다</strong><br>
+      현재 가입금액이 적정 수준의 ${pct}%에 불과합니다. 화재 발생 시 손해액의 ${100-pct}%를 직접 부담하게 됩니다.
+      <ul>
+        <li>보험사에 즉시 증액 상담을 요청하세요 (부족액: ${wonM(shortfall)})</li>
+        <li>건물 재평가를 통해 정확한 현재가치를 확인하세요</li>
+        <li>갱신 전이라도 추가 특약 또는 신규 가입을 검토하세요</li>
+      </ul>`;
+  } else if (ratio < 1) {
+    advCls='amber';
+    advHtml=`<strong>⚠️ 보험 증액을 권고합니다</strong><br>
+      약 <strong>${wonM(shortfall)}</strong> 부족합니다. 현재 상태에서 사고 발생 시 손해액의 ${100-pct}%는 본인 부담입니다.
+      <ul>
+        <li>다음 갱신 시점에 <strong>${wonM(minIns)} 이상</strong>으로 상향하세요</li>
+        <li>건물 증축·개보수가 있었다면 재평가를 권장합니다</li>
+      </ul>`;
+  } else {
+    advCls='green';
+    advHtml=`<strong>✅ 적정 가입 상태입니다</strong><br>
+      실손해액을 보험 한도 내에서 전액 보상받을 수 있습니다.
+      <ul>
+        <li>건물 리모델링·증축 시 보험금액 재검토를 권장합니다</li>
+        <li>매년 신축단가 변동을 확인하여 가입금액을 조정하세요</li>
+      </ul>`;
+  }
+  document.getElementById('adviceBox').className  = `advice-box ${advCls}`;
+  document.getElementById('adviceBox').innerHTML  = advHtml;
+
+  const wrap = document.getElementById('resultWrap');
+  wrap.style.display = 'block';
+  setTimeout(() => wrap.scrollIntoView({ behavior:'smooth', block:'start' }), 60);
+}
+</script>
 </body>
 </html>
