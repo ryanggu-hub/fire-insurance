@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화재 비례보상 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F2F4F8; --sur:#FFF; --bdr:#E2E6EE; --bdr2:#CDD3DF;
+  --tx:#111827; --sub:#6B7280; --mut:#9CA3AF;
+  --red:#C0392B; --red-d:#96241A; --red-bg:#FEF2F2; --red-bd:#FECACA;
+  --amb:#D97706; --amb-bg:#FFFBEB; --amb-bd:#FDE68A;
+  --grn:#15803D; --grn-bg:#F0FDF4; --grn-bd:#BBF7D0;
+  --nvy:#1E3A5F; --nvy-m:#2B5187; --nvy-bg:#EFF4FB;
+  --r:10px; --rl:16px;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.07);
+  --font:'Pretendard','Noto Sans KR',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh;padding:24px 16px 60px;-webkit-font-smoothing:antialiased;}
+
+/* ── 공통 카드 ── */
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);max-width:480px;margin:0 auto 14px;overflow:hidden;}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;}
+.chi{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.chi.navy{background:var(--nvy-bg);} .chi.red{background:var(--red-bg);}
+.ch-title{font-size:13px;font-weight:700;color:var(--nvy);}
+.card-body{padding:18px;}
+
+/* ── 입력 폼 ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field{margin-bottom:16px;} .field:last-child{margin-bottom:0;}
+.flabel{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:3px;}
+.flabel .req{color:var(--red);font-size:13px;}
+.iwrap{position:relative;}
+.iwrap input{width:100%;height:44px;padding:0 40px 0 13px;border:1.5px solid var(--bdr2);border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:500;color:var(--tx);background:#FAFBFC;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s;}
+.iwrap input:focus{outline:none;border-color:var(--nvy-m);background:#fff;box-shadow:0 0 0 3px rgba(43,81,135,.10);}
+.iunit{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--mut);font-weight:500;pointer-events:none;}
+.sel{width:100%;height:44px;padding:0 34px 0 12px;border:1.5px solid var(--bdr2);border-radius:var(--r);font-family:var(--font);font-size:13px;font-weight:500;color:var(--tx);background:#FAFBFC url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center;-webkit-appearance:none;appearance:none;cursor:pointer;}
+.sel:focus{outline:none;border-color:var(--nvy-m);background-color:#fff;box-shadow:0 0 0 3px rgba(43,81,135,.10);}
+
+/* ── 구조 칩 ── */
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{display:flex;align-items:center;gap:4px;padding:6px 11px;border:1.5px solid var(--bdr2);border-radius:18px;font-family:var(--font);font-size:12px;font-weight:600;color:var(--sub);background:#FAFBFC;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;}
+.chip:hover{border-color:var(--nvy-m);color:var(--nvy);background:var(--nvy-bg);}
+.chip.active{border-color:var(--nvy);background:var(--nvy);color:#fff;box-shadow:0 2px 6px rgba(30,58,95,.22);}
+.chip .cr{font-size:10px;opacity:.75;font-family:var(--mono);}
+.chip.active .cr{opacity:.8;}
+
+.istrip{display:flex;align-items:center;gap:7px;background:var(--nvy-bg);border:1px solid #C3D5EE;border-radius:var(--r);padding:8px 12px;font-size:11.5px;color:var(--nvy-m);font-weight:500;margin-top:7px;}
+.istrip .mn{font-family:var(--mono);}
+.dnote{background:#F8F9FB;border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px;font-size:11px;color:var(--sub);line-height:1.65;margin-top:7px;}
+.dnote strong{color:var(--nvy-m);font-weight:700;}
+
+.divline{border:none;border-top:1px solid var(--bdr);margin:16px 0;}
+
+/* ── 토글 스위치 ── */
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.tinfo .tl{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px;}
+.tinfo .ts{font-size:11px;color:var(--mut);}
+.sw{width:44px;height:25px;flex-shrink:0;background:var(--bdr2);border-radius:13px;position:relative;cursor:pointer;transition:background .2s;margin-top:2px;}
+.sw.on{background:var(--nvy);}
+.sw::after{content:'';position:absolute;width:19px;height:19px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 4px rgba(0,0,0,.18);}
+.sw.on::after{transform:translateX(19px);}
+.collapsible{display:none;margin-top:13px;}
+.collapsible.open{display:block;animation:fadeSlide .2s ease;}
+
+/* ── 제출 버튼 ── */
+.btn-submit{width:100%;height:50px;background:linear-gradient(135deg,var(--red) 0%,var(--red-d) 100%);color:#fff;border:none;border-radius:var(--r);font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s,transform .1s;box-shadow:0 4px 12px rgba(192,57,43,.32);}
+.btn-submit:hover{opacity:.92;}
+.btn-submit:active{transform:scale(.99);}
+
+/* ════════════════════════════════
+   결과 영역
+════════════════════════════════ */
+#resultWrap{display:none;}
+
+/* ── 상태 배너 ── */
+.status-banner{max-width:480px;margin:0 auto 14px;border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);animation:slideUp .35s ease;}
+.banner-inner{padding:18px 20px;display:flex;align-items:center;gap:14px;}
+.banner-inner.st-danger {background:linear-gradient(135deg,#7F1D1D,var(--red-d));}
+.banner-inner.st-warning{background:linear-gradient(135deg,#78350F,#B45309);}
+.banner-inner.st-safe   {background:linear-gradient(135deg,#14532D,#15803D);}
+.bn-emoji{font-size:30px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2));}
+.bn-text{color:#fff;flex:1;}
+.bn-title{font-size:15px;font-weight:900;margin-bottom:2px;letter-spacing:-.02em;}
+.bn-sub{font-size:11.5px;opacity:.82;line-height:1.4;}
+.bn-pct{margin-left:auto;flex-shrink:0;text-align:center;color:#fff;}
+.bn-pct-num{font-family:var(--mono);font-size:28px;font-weight:500;line-height:1;}
+.bn-pct-lbl{font-size:9px;opacity:.7;margin-top:2px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+
+/* ── 핵심 3개 카드 ── */
+.hero-cards{max-width:480px;margin:0 auto 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;animation:slideUp .4s ease;}
+.hero-card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);padding:16px 12px;text-align:center;}
+.hero-card.hc-ratio  {border-top:3px solid var(--nvy-m);}
+.hero-card.hc-pay    {border-top:3px solid var(--grn);}
+.hero-card.hc-self   {border-top:3px solid var(--red);}
+.hc-icon{font-size:18px;margin-bottom:6px;}
+.hc-label{font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;line-height:1.3;}
+.hc-value{font-family:var(--mono);font-weight:700;line-height:1.1;}
+.hc-value.big{font-size:22px;}
+.hc-value.med{font-size:16px;}
+.hc-value.c-nvy{color:var(--nvy-m);}
+.hc-value.c-grn{color:var(--grn);}
+.hc-value.c-red{color:var(--red);}
+.hc-value.c-amb{color:var(--amb);}
+.hc-unit{font-size:11px;color:var(--mut);margin-top:3px;font-weight:500;}
+
+/* ── 게이지 카드 ── */
+.gauge-card{max-width:480px;margin:0 auto 14px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);padding:16px 18px;animation:slideUp .45s ease;}
+.gauge-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.gauge-title{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;}
+.gauge-pct-txt{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--tx);}
+.gauge-track{height:14px;background:var(--bg);border-radius:7px;overflow:visible;position:relative;}
+.gauge-fill{height:100%;border-radius:7px;transition:width 1s cubic-bezier(.4,0,.2,1);position:relative;}
+.gauge-fill::after{content:'';position:absolute;right:-1px;top:-2px;width:18px;height:18px;border-radius:50%;background:inherit;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.18);}
+.gauge-mark{position:absolute;top:-4px;height:22px;width:2px;background:var(--amb);border-radius:1px;}
+.gauge-mark-lbl{position:absolute;top:23px;left:-18px;font-size:9px;font-weight:700;color:var(--amb);white-space:nowrap;}
+.gauge-foot{display:flex;justify-content:space-between;margin-top:18px;font-size:9.5px;color:var(--mut);}
+
+/* ── 아코디언 ── */
+.accordion{max-width:480px;margin:0 auto 14px;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden;animation:slideUp .5s ease;}
+.acc-trigger{width:100%;padding:15px 18px;background:none;border:none;font-family:var(--font);font-size:13px;font-weight:700;color:var(--nvy);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;}
+.acc-trigger:hover{background:#FAFBFC;}
+.acc-trigger .acc-left{display:flex;align-items:center;gap:8px;}
+.acc-arrow{font-size:10px;color:var(--mut);transition:transform .25s;flex-shrink:0;}
+.acc-arrow.open{transform:rotate(180deg);}
+.acc-body{display:none;border-top:1px solid var(--bdr);padding:16px 18px;}
+.acc-body.open{display:block;animation:fadeSlide .2s ease;}
+
+/* ── 상세 테이블 (아코디언 내) ── */
+.detail-rows{}
+.dr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bdr);}
+.dr:last-child{border-bottom:none;}
+.dr-key{font-size:12.5px;color:var(--sub);font-weight:500;}
+.dr-val{font-family:var(--mono);font-size:13px;font-weight:600;text-align:right;}
+.dr-val.red{color:var(--red);} .dr-val.grn{color:var(--grn);} .dr-val.amb{color:var(--amb);} .dr-val.nvy{color:var(--nvy-m);}
+.dr-sep{font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.05em;text-transform:uppercase;padding:8px 0 4px;border-bottom:1px solid var(--bdr);}
+
+/* ── 신가 비교 카드 ── */
+.shinon-compare{max-width:480px;margin:0 auto 14px;background:var(--nvy-bg);border:1px solid #C3D5EE;border-radius:var(--rl);box-shadow:var(--sh);padding:16px 18px;animation:slideUp .5s ease;}
+.sc-title{font-size:11px;font-weight:700;color:var(--nvy-m);letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px;}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sc-box{background:#fff;border:1px solid #C3D5EE;border-radius:var(--r);padding:12px 14px;}
+.sc-box-lbl{font-size:10px;font-weight:700;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px;}
+.sc-box-val{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--nvy-m);}
+.sc-box-sub{font-size:11px;color:var(--mut);margin-top:3px;}
+
+/* ── 조언 ── */
+.advice-card{max-width:480px;margin:0 auto 14px;border-radius:var(--rl);padding:16px 18px;box-shadow:var(--sh);animation:slideUp .55s ease;}
+.advice-card.red  {background:var(--red-bg);border:1px solid var(--red-bd);color:#7F1D1D;}
+.advice-card.amber{background:var(--amb-bg);border:1px solid var(--amb-bd);color:#78350F;}
+.advice-card.green{background:var(--grn-bg);border:1px solid var(--grn-bd);color:#14532D;}
+.advice-card strong{font-weight:700;font-size:13.5px;}
+.advice-card ul{margin:8px 0 0 16px;font-size:12.5px;line-height:1.75;}
+.advice-card li{margin-bottom:3px;}
+
+.footnote{max-width:480px;margin:8px auto 0;font-size:10.5px;color:var(--mut);text-align:center;line-height:1.8;padding:0 4px;}
+
+@keyframes fadeSlide{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+/* 모바일 최적화 */
+@media(max-width:400px){
+  .hero-cards{grid-template-columns:1fr 1fr;}
+  .hero-card:first-child{grid-column:1/-1;}
+  .hc-value.big{font-size:26px;}
+  .hc-value.med{font-size:15px;}
+  .grid2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ 입력 카드: 건물 정보 ══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi navy">🏢</div>
+    <span class="ch-title">건물 정보</span>
+  </div>
+  <div class="card-body">
+    <div class="field">
+      <div class="grid2">
+        <div>
+          <div class="flabel">준공연도 <span class="req">*</span></div>
+          <div class="iwrap"><input type="number" id="year" value="2002" min="1900" max="2025"><span class="iunit">년</span></div>
+        </div>
+        <div>
+          <div class="flabel">면적 <span class="req">*</span></div>
+          <div class="iwrap"><input type="number" id="area" value="66" min="1"><span class="iunit">㎡</span></div>
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:var(--mut);margin-top:5px;">💡 평 × 3.305 = ㎡ &nbsp;(예: 20평 → 66㎡)</div>
+    </div>
+
+    <div class="field">
+      <div class="flabel">건물 구조 <span class="req">*</span></div>
+      <div class="chip-group" id="structGroup">
+        <div class="chip active" data-key="RC"     onclick="pickStruct(this)">철근·철골콘크리트 <span class="cr">[A]</span></div>
+        <div class="chip"        data-key="STEEL"  onclick="pickStruct(this)">철골조·석조·연와석조 <span class="cr">[B]</span></div>
+        <div class="chip"        data-key="CONC"   onclick="pickStruct(this)">콘크리트·목조(한식) <span class="cr">[C]</span></div>
+        <div class="chip"        data-key="BLOCK"  onclick="pickStruct(this)">블록조·경량철골·판넬 <span class="cr">[D]</span></div>
+        <div class="chip"        data-key="EARTH"  onclick="pickStruct(this)">토조·토벽조·목골탈락 <span class="cr">[E]</span></div>
+        <div class="chip"        data-key="SIMPLE" onclick="pickStruct(this)">간이·컨테이너 <span class="cr">[F]</span></div>
+      </div>
+      <div class="istrip"><span>📐</span><span id="structStripText"></span></div>
+    </div>
+
+    <div class="field">
+      <div class="flabel">건물 용도 <span class="req">*</span></div>
+      <select class="sel" id="usageCat" onchange="onCatChange()" style="margin-bottom:7px;">
+        <option value="일반">🏠 일반건물 (주거·근생·업무)</option>
+        <option value="창고공장">🏭 창고·공장</option>
+        <option value="특수">⚡ 특수건물 (변전소·냉장창고 등)</option>
+      </select>
+      <select class="sel" id="usageSub" onchange="onSubChange()"></select>
+      <div class="istrip" style="margin-top:7px;"><span>💰</span><span id="priceStripText"></span></div>
+      <div class="dnote" id="deprNote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 입력 카드: 보험 정보 ══ -->
+<div class="card">
+  <div class="card-head">
+    <div class="chi red">🛡</div>
+    <span class="ch-title">보험 가입 현황</span>
+  </div>
+  <div class="card-body">
+    <div class="field">
+      <div class="flabel">현재 화재보험 가입금액 <span class="req">*</span></div>
+      <div class="iwrap"><input type="number" id="insurance" value="30000" min="0"><span class="iunit">만원</span></div>
+    </div>
+
+    <hr class="divline">
+
+    <div class="toggle-row">
+      <div class="tinfo">
+        <div class="tl">🆕 신가보상 특약 가입</div>
+        <div class="ts">시가·신가 두 시나리오 비교</div>
+      </div>
+      <div class="sw" id="shinonToggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+
+    <hr class="divline">
+
+    <div class="toggle-row">
+      <div class="tinfo">
+        <div class="tl">실제 손해액 입력</div>
+        <div class="ts">보험금·본인부담 직접 계산</div>
+      </div>
+      <div class="sw" id="lossToggle" onclick="toggleLoss(this)"></div>
+    </div>
+    <div class="collapsible" id="lossCollapse">
+      <div class="flabel" style="margin-top:0;">실제 발생 손해액</div>
+      <div class="iwrap">
+        <input type="number" id="lossAmt" min="0" placeholder="예: 5000">
+        <span class="iunit">만원</span>
+      </div>
+    </div>
+
+    <hr class="divline">
+    <button class="btn-submit" onclick="calculate()">🔍 비례보상 진단 실행</button>
+  </div>
+</div>
+
+<!-- ══ 결과 영역 ══ -->
+<div id="resultWrap">
+
+  <!-- 1. 상태 배너 -->
+  <div class="status-banner">
+    <div class="banner-inner" id="bannerInner">
+      <div class="bn-emoji" id="bnEmoji"></div>
+      <div class="bn-text">
+        <div class="bn-title" id="bnTitle"></div>
+        <div class="bn-sub"   id="bnSub"></div>
+      </div>
+      <div class="bn-pct">
+        <div class="bn-pct-num" id="bnPctNum"></div>
+        <div class="bn-pct-lbl">보상비율</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 핵심 3카드 -->
+  <div class="hero-cards" id="heroCards"></div>
+
+  <!-- 3. 게이지 -->
+  <div class="gauge-card">
+    <div class="gauge-header">
+      <span class="gauge-title">가입금액 / 적정금액 비율</span>
+      <span class="gauge-pct-txt" id="gaugePct"></span>
+    </div>
+    <div class="gauge-track">
+      <div class="gauge-fill" id="gaugeFill" style="width:0%"></div>
+      <div class="gauge-mark" style="left:80%"><div class="gauge-mark-lbl">기준 80%</div></div>
+    </div>
+    <div class="gauge-foot"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span><span>100%</span></div>
+  </div>
+
+  <!-- 4. 아코디언: 감가상각 내역 -->
+  <div class="accordion">
+    <button class="acc-trigger" onclick="toggleAcc('deprAcc','deprArrow')">
+      <span class="acc-left">📉 감가상각 내역</span>
+      <span class="acc-arrow" id="deprArrow">▼</span>
+    </button>
+    <div class="acc-body" id="deprAcc">
+      <div class="detail-rows" id="deprRows"></div>
+    </div>
+  </div>
+
+  <!-- 5. 아코디언: 비례보상 진단 (시가) -->
+  <div class="accordion">
+    <button class="acc-trigger" onclick="toggleAcc('sikaAcc','sikaArrow')">
+      <span class="acc-left">⚖️ 비례보상 진단 — 시가 기준</span>
+      <span class="acc-arrow" id="sikaArrow">▼</span>
+    </button>
+    <div class="acc-body" id="sikaAcc">
+      <div class="detail-rows" id="sikaRows"></div>
+    </div>
+  </div>
+
+  <!-- 6. 아코디언: 비례보상 진단 (신가) — 토글 on 시만 -->
+  <div class="accordion" id="shinAccordion" style="display:none;">
+    <button class="acc-trigger" onclick="toggleAcc('shinAcc','shinArrow')">
+      <span class="acc-left">🆕 비례보상 진단 — 신가보상 특약</span>
+      <span class="acc-arrow" id="shinArrow">▼</span>
+    </button>
+    <div class="acc-body" id="shinAcc">
+      <div class="detail-rows" id="shinRows"></div>
+    </div>
+  </div>
+
+  <!-- 7. 신가 비교 요약 (토글 on 시만) -->
+  <div class="shinon-compare" id="shinonCompare" style="display:none;">
+    <div class="sc-title">📊 시가 vs 신가 보상 비교</div>
+    <div class="sc-grid" id="scGrid"></div>
+  </div>
+
+  <!-- 8. 조언 -->
+  <div class="advice-card" id="adviceCard"></div>
+
+</div>
+
+<p class="footnote">
+  ※ 신축단가: 한국부동산원 2025년도 · 경년감가율: 화재보험 별표1 기준<br>
+  ※ 수리비 단가 83만원/㎡ 기준 · 실제 보험금은 손해사정에 따라 달라질 수 있습니다.
+</p>
+
+<script>
+const REPAIR_UNIT = 83; // 만원/㎡
+
+const DEPR = {
+  RC:    {일반:{life:75,rate:1.07},창고공장:{life:57,rate:1.40},특수:{life:38,rate:2.11}},
+  STEEL: {일반:{life:60,rate:1.33},창고공장:{life:45,rate:1.78},특수:{life:30,rate:2.67}},
+  CONC:  {일반:{life:50,rate:1.60},창고공장:{life:38,rate:2.11},특수:{life:25,rate:3.20}},
+  BLOCK: {일반:{life:40,rate:2.00},창고공장:{life:30,rate:2.67},특수:{life:20,rate:4.00}},
+  EARTH: {일반:{life:30,rate:2.67},창고공장:{life:23,rate:3.48},특수:{life:15,rate:5.33}},
+  SIMPLE:{일반:{life:10,rate:8.00},창고공장:{life:7,rate:11.43},특수:{life:7,rate:11.43}},
+};
+const STRUCT_LABELS = {
+  RC:'철근·철골콘크리트/철골콘크리트조',STEEL:'철골조/석조/연와석조',
+  CONC:'콘크리트조/연와조/목조(한식·통나무)',BLOCK:'블록조/경량철골조/판넬(절충식)',
+  EARTH:'토조/토벽조/목골탈락',SIMPLE:'간이·컨테이너 구조',
+};
+const USAGE_MAP = {
+  일반:[
+    {label:'다가구 주택',  price:207.99},
+    {label:'아파트',       price:192.74},
+    {label:'연립 주택',    price:232.95},
+    {label:'다세대 주택',  price:205.54},
+    {label:'다중주택',     price:212.79},
+    {label:'오피스텔',     price:194.57},
+    {label:'근린생활시설', price:192.10},
+  ],
+  창고공장:[{label:'창고',price:86.09},{label:'공장',price:105.34}],
+  특수:[
+    {label:'변전소·발전소 등 (참고용)',price:105.34},
+    {label:'냉장창고 (참고용)',        price:105.34},
+    {label:'화학공장 등 (참고용)',     price:105.34},
+  ],
+};
+
+let curStructKey = 'RC';
+window.onload = ()=>{ updateStructStrip(); onCatChange(); };
+
+function pickStruct(el){
+  document.querySelectorAll('#structGroup .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); curStructKey=el.dataset.key;
+  updateStructStrip(); updateDeprNote();
+}
+const deprCat = ()=> document.getElementById('usageCat').value;
+function updateStructStrip(){
+  const d=DEPR[curStructKey][deprCat()];
+  document.getElementById('structStripText').innerHTML=
+    `${STRUCT_LABELS[curStructKey]} · 내용연수 <span class="mn">${d.life}년</span> · 연 감가율 <span class="mn">${d.rate}%</span>`;
+}
+function onCatChange(){
+  const cat=deprCat();
+  document.getElementById('usageSub').innerHTML=
+    USAGE_MAP[cat].map(it=>`<option value="${it.price}">${it.label} — ${(it.price*10000).toLocaleString()}원/㎡</option>`).join('');
+  onSubChange(); updateStructStrip(); updateDeprNote();
+}
+function onSubChange(){
+  const sub=document.getElementById('usageSub');
+  const label=sub.options[sub.selectedIndex].text.split('—')[0].trim();
+  const price=parseFloat(sub.value);
+  document.getElementById('priceStripText').textContent=
+    `${label} · ㎡당 ${(price*10000).toLocaleString()}원 / 평당 약 ${(price*3.305).toFixed(0)}만원`;
+  updateDeprNote();
+}
+function updateDeprNote(){
+  const d=DEPR[curStructKey][deprCat()];
+  const cl={일반:'일반건물',창고공장:'창고·공장',특수:'특수건물'}[deprCat()];
+  document.getElementById('deprNote').innerHTML=
+    `<strong>별표1 기준</strong> · ${cl} · ${STRUCT_LABELS[curStructKey]}<br>내용연수 <strong>${d.life}년</strong> · 연 감가율 <strong>${d.rate}%</strong>`;
+}
+function toggleLoss(el){
+  el.classList.toggle('on');
+  document.getElementById('lossCollapse').classList.toggle('open',el.classList.contains('on'));
+}
+function toggleAcc(bodyId,arrowId){
+  const body=document.getElementById(bodyId);
+  const arrow=document.getElementById(arrowId);
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  body.style.display=isOpen?'none':'block';
+  if(!isOpen){ body.style.display='block'; body.classList.add('open'); }
+  else        { body.classList.remove('open'); body.style.display='none'; }
+  arrow.classList.toggle('open',!isOpen);
+}
+
+/* ── 포맷 ── */
+const comma  = n => Number(n).toLocaleString('ko-KR');
+const numM   = n => comma(Math.round(n));   // 숫자만
+const wonM   = n => numM(n) + ' 만원';
+
+/* ── 상세 행 HTML ── */
+const dr  = (k,v,vc='') => `<div class="dr"><span class="dr-key">${k}</span><span class="dr-val ${vc}">${v}</span></div>`;
+const sep = t => `<div class="dr-sep">${t}</div>`;
+
+/* ── 메인 계산 ── */
+function calculate(){
+  const year     = parseInt(document.getElementById('year').value)       ||0;
+  const area     = parseFloat(document.getElementById('area').value)     ||0;
+  const insAmt   = parseFloat(document.getElementById('insurance').value)||0;
+  const unit     = parseFloat(document.getElementById('usageSub').value) ||0;
+  const shinonOn = document.getElementById('shinonToggle').classList.contains('on');
+  const lossOn   = document.getElementById('lossToggle').classList.contains('on');
+  const lossIn   = lossOn?(parseFloat(document.getElementById('lossAmt').value)||0):null;
+
+  if(!year||!area||!insAmt){ alert('준공연도, 면적, 가입금액을 입력해주세요.'); return; }
+
+  const d       = DEPR[curStructKey][deprCat()];
+  const elapsed = Math.max(0, new Date().getFullYear()-year);
+
+  /* 신축가 / 시가 */
+  const newPrice  = area * unit;
+  const deprPct   = Math.min(elapsed * d.rate, 80);
+  const remainPct = 100 - deprPct;
+  const currVal   = Math.round(newPrice * remainPct / 100);   // 보험가액
+  const deprAmt   = Math.round(newPrice - currVal);
+
+  /* 수리비 (전손) */
+  const repairCost = Math.round(area * REPAIR_UNIT);
+
+  /* 시가 비례보상 */
+  const minIns    = Math.round(currVal * 0.8);
+  const ratio     = Math.min(insAmt / minIns, 1);
+  const pct       = Math.round(ratio * 100);
+  const shortfall = Math.max(0, minIns - insAmt);
+
+  /* 핵심 보험금 · 미보상 (전손 기준 or 실손해액 기준) */
+  const baseLoss  = (lossOn && lossIn > 0) ? lossIn : repairCost;
+  const payAmt    = Math.min(Math.round(baseLoss * ratio), insAmt);
+  const selfAmt   = Math.max(0, baseLoss - payAmt);
+
+  /* 신가 비례보상 */
+  const shinMin   = Math.round(newPrice * 0.8);
+  const shinRatio = Math.min(insAmt / shinMin, 1);
+  const shinPct   = Math.round(shinRatio * 100);
+  const shinPay   = Math.min(Math.round(baseLoss * shinRatio), insAmt);
+  const shinSelf  = Math.max(0, baseLoss - shinPay);
+
+  /* ══ 상태 배너 ══ */
+  let st, emoji, title, sub;
+  if      (ratio<0.6){ st='st-danger';  emoji='🚨'; title='위험 — 심각한 비례보상'; sub=`손해액의 ${pct}%만 수령 · 즉각 조치 필요`; }
+  else if (ratio<1.0){ st='st-warning'; emoji='⚠️'; title='주의 — 비례보상 발생';   sub=`손해액의 ${pct}%만 수령 · 증액 권고`; }
+  else               { st='st-safe';   emoji='✅'; title='안전 — 적정 가입 상태';  sub='손해액 전액 보상 가능 (한도 내)'; }
+  document.getElementById('bannerInner').className='banner-inner '+st;
+  document.getElementById('bnEmoji').textContent=emoji;
+  document.getElementById('bnTitle').textContent=title;
+  document.getElementById('bnSub').textContent=sub;
+  document.getElementById('bnPctNum').textContent=pct+'%';
+
+  /* ══ 핵심 3카드 ══ */
+  const ratioColor = pct>=100?'c-grn':pct>=70?'c-amb':'c-red';
+  const payColor   = pct>=100?'c-grn':'c-amb';
+  const selfColor  = selfAmt>0?'c-red':'c-grn';
+  const lossLabel  = (lossOn && lossIn>0) ? '실손해 기준' : '전손 기준';
+
+  document.getElementById('heroCards').innerHTML = `
+    <div class="hero-card hc-ratio">
+      <div class="hc-icon">⚖️</div>
+      <div class="hc-label">비례보상<br>비율</div>
+      <div class="hc-value big ${ratioColor}">${pct}%</div>
+      <div class="hc-unit">${pct>=100?'전액 보상':shortfall>0?'부족 '+numM(shortfall)+'만원':''}</div>
+    </div>
+    <div class="hero-card hc-pay">
+      <div class="hc-icon">💰</div>
+      <div class="hc-label">지급 예상<br>보험금</div>
+      <div class="hc-value med ${payColor}">${numM(payAmt)}</div>
+      <div class="hc-unit">만원 · ${lossLabel}</div>
+    </div>
+    <div class="hero-card hc-self">
+      <div class="hc-icon">🏷️</div>
+      <div class="hc-label">미보상<br>예상액</div>
+      <div class="hc-value med ${selfColor}">${selfAmt>0?numM(selfAmt):'없음'}</div>
+      <div class="hc-unit">${selfAmt>0?'만원 · 본인부담':'전액 보상'}</div>
+    </div>`;
+
+  /* ══ 게이지 ══ */
+  const gW = Math.min((insAmt/minIns)*80, 100);
+  const gC = pct>=100?'#15803D':pct>=70?'#D97706':'#C0392B';
+  const gf = document.getElementById('gaugeFill');
+  gf.style.background=gC;
+  setTimeout(()=>{ gf.style.width=gW+'%'; },80);
+  document.getElementById('gaugePct').textContent=Math.round((insAmt/minIns)*100)+'%';
+
+  /* ══ 아코디언: 감가상각 내역 ══ */
+  document.getElementById('deprRows').innerHTML = [
+    sep('건물 가치 산출'),
+    dr('용도별 신축단가', comma(Math.round(unit*10000))+'원/㎡', 'nvy'),
+    dr('건물 면적', area+'㎡ (약 '+(area/3.305).toFixed(1)+'평)', ''),
+    dr('신축 재조달가', wonM(newPrice), 'nvy'),
+    sep('경년감가 (별표1)'),
+    dr('경과연수', elapsed+'년', ''),
+    dr('내용연수 · 연 감가율', d.life+'년 · '+d.rate+'%/년', ''),
+    dr('누적 감가율', deprPct.toFixed(2)+'%', 'amb'),
+    dr('잔존가치율', remainPct.toFixed(2)+'%', 'grn'),
+    dr('감가상각액', wonM(deprAmt), 'red'),
+    dr('보험가액 (현재 시가)', wonM(currVal), 'nvy'),
+  ].join('');
+
+  /* ══ 아코디언: 비례보상 진단 (시가) ══ */
+  const repairShort = Math.round(repairCost * (1 - ratio));
+  document.getElementById('sikaRows').innerHTML = [
+    sep('적정 가입 기준'),
+    dr('수리비 (전손 기준, 83만원/㎡)', wonM(repairCost), 'nvy'),
+    dr('적정 가입금액 (보험가액×80%)', wonM(minIns), 'nvy'),
+    dr('현재 가입금액', wonM(insAmt), insAmt>=minIns?'grn':'red'),
+    dr('가입 부족액', shortfall>0?wonM(shortfall):'없음', shortfall>0?'red':'grn'),
+    sep('비례보상 계산'),
+    dr('비례보상 비율', pct+'%', ratioColor),
+    dr('전손 시 수령 예상액', wonM(payAmt), payColor),
+    dr('전손 시 미보상 예상액', repairShort>0?wonM(repairShort):'없음', repairShort>0?'red':'grn'),
+    ...(lossOn&&lossIn>0 ? [
+      sep('실손해액 기준'),
+      dr('입력 손해액', wonM(lossIn), 'nvy'),
+      dr('보험금 수령 예상', wonM(payAmt), payColor),
+      dr('본인 부담 예상', selfAmt>0?wonM(selfAmt):'없음', selfColor),
+    ] : []),
+  ].join('');
+
+  /* ══ 신가 아코디언 + 비교 ══ */
+  document.getElementById('shinAccordion').style.display = shinonOn?'':'none';
+  document.getElementById('shinonCompare').style.display = shinonOn?'':'none';
+
+  if(shinonOn){
+    const shinRepairShort = Math.round(repairCost*(1-shinRatio));
+    const shinShort = Math.max(0,shinMin-insAmt);
+    document.getElementById('shinRows').innerHTML = [
+      sep('신가 기준'),
+      dr('신축 재조달가 (보상기준)', wonM(newPrice), 'nvy'),
+      dr('적정 가입금액 (신가×80%)', wonM(shinMin), 'nvy'),
+      dr('현재 가입금액', wonM(insAmt), insAmt>=shinMin?'grn':'red'),
+      dr('가입 부족액 (신가 기준)', shinShort>0?wonM(shinShort):'없음', shinShort>0?'red':'grn'),
+      sep('비례보상 계산 (신가)'),
+      dr('비례보상 비율', shinPct+'%', shinPct>=100?'grn':shinPct>=70?'amb':'red'),
+      dr('전손 시 수령 예상액', wonM(shinPay), shinPct>=100?'grn':'amb'),
+      dr('전손 시 미보상 예상액', shinRepairShort>0?wonM(shinRepairShort):'없음', shinRepairShort>0?'red':'grn'),
+    ].join('');
+
+    const diff = shinPay - payAmt;
+    document.getElementById('scGrid').innerHTML = `
+      <div class="sc-box">
+        <div class="sc-box-lbl">시가 보험금</div>
+        <div class="sc-box-val" style="color:var(--amb);">${numM(payAmt)}<span style="font-size:12px;color:var(--mut);">만원</span></div>
+        <div class="sc-box-sub">비율 ${pct}% · 미보상 ${numM(Math.max(0,baseLoss-payAmt))}만원</div>
+      </div>
+      <div class="sc-box">
+        <div class="sc-box-lbl">신가 보험금</div>
+        <div class="sc-box-val" style="color:var(--grn);">${numM(shinPay)}<span style="font-size:12px;color:var(--mut);">만원</span></div>
+        <div class="sc-box-sub">비율 ${shinPct}% · 추가 +${numM(diff)}만원</div>
+      </div>`;
+  }
+
+  /* ══ 조언 ══ */
+  let advHtml, advCls;
+  if(ratio<0.6){
+    advCls='red';
+    advHtml=`<strong>🚨 즉각적인 조치가 필요합니다</strong>
+      <ul>
+        <li>가입금액 <strong>${numM(shortfall)} 만원</strong> 부족 · 즉시 증액 상담 필요</li>
+        <li>전손 시 약 <strong>${numM(repairShort)} 만원</strong> 본인 부담</li>
+        <li>신가보상 특약 가입 시 감가 없이 신축가 기준 보상 가능</li>
+      </ul>`;
+  } else if(ratio<1.0){
+    advCls='amber';
+    advHtml=`<strong>⚠️ 보험 증액을 권고합니다</strong>
+      <ul>
+        <li>가입 부족액 <strong>${numM(shortfall)} 만원</strong> · 갱신 시 ${numM(minIns)} 만원 이상으로 상향</li>
+        <li>전손 시 약 <strong>${numM(Math.round(repairCost*(1-ratio)))} 만원</strong> 본인 부담 예상</li>
+        <li>노후 건물일수록 신가보상 특약이 유리합니다</li>
+      </ul>`;
+  } else {
+    advCls='green';
+    advHtml=`<strong>✅ 적정 가입 상태입니다</strong>
+      <ul>
+        <li>실손해액 한도 내 전액 보상 가능</li>
+        <li>신가 특약 추가 시 감가상각액 <strong>${numM(deprAmt)} 만원</strong>만큼 추가 보상 가능</li>
+        <li>증축·리모델링 시 보험금액 재검토 권장</li>
+      </ul>`;
+  }
+  const ac = document.getElementById('adviceCard');
+  ac.className=`advice-card ${advCls}`;
+  ac.innerHTML=advHtml;
+
+  document.getElementById('resultWrap').style.display='block';
+  setTimeout(()=>document.getElementById('resultWrap').scrollIntoView({behavior:'smooth',block:'start'}),60);
+}
+</script>
+</body>
+</html>
