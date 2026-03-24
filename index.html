@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KS Clean 119 - 화재 비례보상 계산기</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; line-height: 1.6; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        h2 { color: #d32f2f; text-align: center; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #1a237e; color: white; border: none; border-radius: 5px; margin-top: 20px; font-size: 16px; cursor: pointer; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 5px; display: none; }
+        .warning { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .safe { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>KS Clean 119<br>손해액 진단기</h2>
+    <p style="font-size: 0.9em; color: #666; text-align: center;">화재 복구 및 보험 보상 범위 확인</p>
+    
+    <label>건물 준공연도 (예: 2002)</label>
+    <input type="number" id="year" placeholder="예: 2002" value="2002">
+
+    <label>건물 면적 (평)</label>
+    <input type="number" id="area" placeholder="예: 20" value="20">
+
+    <label>현재 화재보험 가입금액 (만원)</label>
+    <input type="number" id="insurance" placeholder="예: 30000" value="30000">
+
+    <button onclick="checkInsurance()">보상 범위 진단하기</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    function checkInsurance() {
+        const buildYear = document.getElementById('year').value;
+        const area = document.getElementById('area').value;
+        const myInsurance = document.getElementById('insurance').value;
+        
+        const currentYear = new Date().getFullYear();
+        const elapsed = currentYear - buildYear; // 경과연수
+        
+        // 1. 신축단가 (평당 600만원 가정)
+        // 2. 감가율 (철근콘크리트 1년 2% 감가 가정)
+        const newPrice = area * 600; 
+        const depreciation = elapsed * 2; 
+        const currentValue = Math.round(newPrice * (1 - (depreciation / 100)));
+        
+        // 80% 미만 가입 시 비례보상 발생
+        const limit = currentValue * 0.8;
+        const ratio = myInsurance < limit ? (myInsurance / limit) : 1;
+        
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        
+        if (ratio < 1) {
+            resultDiv.className = 'warning';
+            resultDiv.innerHTML = `
+                <strong>⚠️ 주의: 비례보상 대상입니다!</strong><br>
+                현재 건물의 평가 가치는 약 <b>${currentValue}만원</b>입니다.<br>
+                사고 발생 시 실제 손해액의 약 <b>${Math.round(ratio * 100)}%</b>만 보상받으실 수 있습니다.
+            `;
+        } else {
+            resultDiv.className = 'safe';
+            resultDiv.innerHTML = `
+                <strong>✅ 안전: 적정 가입 상태입니다.</strong><br>
+                현재 건물의 가치 대비 보험금이 충분합니다.<br>
+                실제 손해액을 한도 내에서 전액 보상받으실 수 있습니다.
+            `;
+        }
+    }
+</script>
+
+</body>
+</html>
